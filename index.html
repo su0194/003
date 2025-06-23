@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第一關：日本</title>
+  <style>
+    @font-face {
+      font-family: "王漢宗鋼粗體標準";
+      src: url("fonts/wcl-07.ttf") format("truetype");
+      font-weight: normal;
+      font-style: normal;
+    }
+    body, button, h1, h2, h3, p, div {
+      font-family: "王漢宗鋼粗體標準", Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      background: url('images/bg_japan.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .game-container {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      max-width: 800px;
+      margin: 30px auto;
+      border-radius: 10px;
+    }
+    .instructions p {
+      margin: 5px 0;
+    }
+    .score-board {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .flag {
+      width: 60px;
+      height: auto;
+    }
+    .progress-bar-bg {
+      width: 60%;
+      height: 20px;
+      background-color: #444;
+      margin: 0 15px;
+      border-radius: 10px;
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #4caf50;
+      border-radius: 10px;
+    }
+    .note-area {
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .note {
+      background: yellow;
+      position: absolute;
+      top: -60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 24px;
+      color: black;
+      border-radius: 6px;
+      user-select: none;
+      cursor: pointer;
+      animation: slideDown 3s forwards;
+    }
+    @keyframes slideDown {
+      from {
+        top: -60px;
+      }
+      to {
+        top: 240px; /* 音符停在灰色區域內 */
+      }
+    }
+    .feedback {
+      font-size: 2em;
+      text-align: center;
+      height: 50px;
+    }
+    .flash {
+      animation: flashRed 0.3s;
+    }
+    @keyframes flashRed {
+      from { background-color: rgba(255, 0, 0, 0.5); }
+      to { background-color: transparent; }
+    }
+    #start-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 12px 30px;
+      font-size: 1.5em;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    #start-btn:hover {
+      background-color: #45a049;
+    }
+    #game-content {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>SDGs 第17項 - 夥伴關係：旋律節奏遊戲</h1>
+
+    <div id="intro">
+      <p>🎮 遊戲玩法：當音符出現在區域時，點擊對應的音符。</p>
+      <p>✅ 點擊正確音符顯示「Perfect」，得 2 分；❌ 點錯音符，扣 1 分。</p>
+      <p>🎯 分數達 30 分過關，未達將重新開始。</p>
+      <p>🌏 SDGs 第17項強調全球合作與夥伴關係。每過一關，就代表你成功促成一個新的邦交國加入合作，實踐全球夥伴行動！</p>
+      <button id="start-btn">開始遊戲</button>
+    </div>
+
+    <div id="game-content">
+      <div class="score-board">
+        <span>分數：<span id="score">0</span></span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="progress"></div>
+        </div>
+        <img src="images/japan.png" class="flag" alt="日本國旗" />
+      </div>
+
+      <div class="note-area" id="note-area"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <audio id="bgm" src="audio/bgm_japan.mp3" volume="0.2"></audio>
+
+  <script>
+    const bgm = document.getElementById('bgm');
+    const noteArea = document.getElementById('note-area');
+    const feedback = document.getElementById('feedback');
+    const scoreDisplay = document.getElementById('score');
+    const progressBar = document.getElementById('progress');
+
+    const startBtn = document.getElementById('start-btn');
+    const intro = document.getElementById('intro');
+    const gameContent = document.getElementById('game-content');
+
+    let score = 0;
+    const targetScore = 30;
+    const totalNotes = 20;
+    let notesHit = 0;
+    let gameInterval = null;
+
+    function showFeedback(text, color) {
+      feedback.textContent = text;
+      feedback.style.color = color;
+    }
+
+    function flashRed() {
+      document.body.classList.add('flash');
+      setTimeout(() => document.body.classList.remove('flash'), 300);
+    }
+
+    function createNote() {
+      const keys = ["援助最低度開發國家", "國際合作", "強化國際支持", "增加開發中國家的出口量"];
+      const key = keys[Math.floor(Math.random() * keys.length)];
+
+      const note = document.createElement('div');
+      note.classList.add('note');
+      note.textContent = key;
+      note.style.left = `${Math.random() * 70 + 15}%`;  // 保證音符不會超出灰色區域
+      note.dataset.key = key;  // 記錄該音符應按的鍵
+      noteArea.appendChild(note);
+
+      note.addEventListener('click', () => {
+        if (note.dataset.key === key) {
+          note.remove();
+          score += 2;
+          notesHit++;
+          showFeedback('Perfect', 'lightgreen');
+        } else {
+          score -= 1;
+          showFeedback('Miss', 'red');
+          flashRed();
+        }
+
+        scoreDisplay.textContent = score;
+        updateProgress();
+
+        if (notesHit >= totalNotes) {
+          clearInterval(gameInterval);
+          bgm.pause();
+
+          if (score >= targetScore) {
+            // 成就紀錄寫入 localStorage
+            localStorage.setItem('ach_japan_level1_cleared', 'true');
+
+            showFeedback('恭喜過關！', 'lightgreen');  // 顯示過關文字
+            setTimeout(() => {
+              window.location.href = 'games_2.html';
+            }, 1000);  // 1秒後跳轉
+          } else {
+            setTimeout(() => {
+              alert('分數未達30分，請再試一次！');
+              window.location.reload();
+            }, 100);
+          }
+        }
+      });
+
+      setTimeout(() => {
+        // 音符消失時，若未被點擊則扣分
+        if (note.parentElement) {
+          note.remove();
+          score -= 1;
+          showFeedback('Miss', 'red');
+          flashRed();
+          scoreDisplay.textContent = score;
+          updateProgress();
+        }
+      }, 3000);
+    }
+
+    function updateProgress() {
+      const percentage = Math.min(score / targetScore * 100, 100);
+      progressBar.style.width = `${percentage}%`;
+    }
+
+    function startGame() {
+      intro.style.display = 'none';
+      gameContent.style.display = 'block';
+      bgm.volume = 0.2;
+      bgm.play();
+
+      score = 0;
+      notesHit = 0;
+      scoreDisplay.textContent = score;
+      updateProgress();
+
+      gameInterval = setInterval(createNote, 2000);
+    }
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>

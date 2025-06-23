@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第二關：肯亞記憶配對</title>
+  <style>
+    @font-face {
+      font-family: 'WCL07';
+      src: url('fonts/wcl-07.ttf') format('truetype');
+    }
+    body {
+      margin: 0;
+      font-family: 'WCL07', sans-serif;
+      background: url('images/bg_kenya.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .game-container {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      max-width: 900px;
+      margin: 30px auto;
+      border-radius: 10px;
+    }
+    .instructions p {
+      margin: 5px 0;
+    }
+    .score-board {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .flag {
+      width: 60px;
+      height: auto;
+    }
+    .progress-bar-bg {
+      width: 60%;
+      height: 20px;
+      background-color: #444;
+      margin: 0 15px;
+      border-radius: 10px;
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #4caf50;
+      border-radius: 10px;
+    }
+    .card {
+      width: 190px;
+      height: 325px;
+      background: #fff;
+      margin: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: black;
+      border-radius: 10px;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+    }
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    #start-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 12px 30px;
+      font-size: 1.5em;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    #start-btn:hover {
+      background-color: #45a049;
+    }
+    #game-content {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>SDGs 第17項 - 夥伴關係：肯亞記憶配對</h1>
+    <div id="intro">
+      <p>🧠 遊戲玩法：記住圖卡與名稱的位置，配對成功得 2 分，總分達 6 分即可過關！</p>
+      <p>🎯 出現 5 對配對卡（圖片與對應文字），開始前會顯示 5 秒，之後翻面洗牌開始遊戲。</p>
+      <p>🌏 SDGs 第17項強調全球合作與夥伴關係，透過記憶挑戰來認識肯亞！</p>
+      <button id="start-btn">開始遊戲</button>
+    </div>
+
+    <div id="game-content">
+      <div class="score-board">
+        <span>分數：<span id="score">0</span></span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="progress"></div>
+        </div>
+        <img src="images/kenya.png" class="flag" alt="肯亞國旗" />
+      </div>
+
+      <div class="grid" id="card-grid"></div>
+    </div>
+  </div>
+
+  <audio id="bgm" src="audio/bgm_kenya.mp3" volume="0.2"></audio>
+  <script>
+    const data = [
+      { name: "全球性貿易", img: "images/global_trade.png" },
+      { name: "世界貿易組織（WTO）", img: "images/wto_logo.png" },
+      { name: "社會夥伴關係", img: "images/social_partnership.png" },
+      { name: "協助開發中國家", img: "images/aid_developing_countries.png" },
+      { name: "擴大其科技使用", img: "images/technology_expansion.png" }
+    ];
+
+    const bgm = document.getElementById('bgm');
+    const startBtn = document.getElementById('start-btn');
+    const intro = document.getElementById('intro');
+    const gameContent = document.getElementById('game-content');
+    const cardGrid = document.getElementById('card-grid');
+    const scoreDisplay = document.getElementById('score');
+    const progressBar = document.getElementById('progress');
+
+    let score = 0;
+    const targetScore = 6;
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let matchedPairs = 0;
+
+    function updateProgress() {
+      const percentage = Math.min(score / targetScore * 100, 100);
+      progressBar.style.width = `${percentage}%`;
+    }
+
+    function shuffle(array) {
+      return array.sort(() => 0.5 - Math.random());
+    }
+
+    function setupCards() {
+      const cards = [];
+      data.forEach(item => {
+        cards.push({ type: 'image', name: item.name, content: item.img });
+        cards.push({ type: 'text', name: item.name, content: item.name });
+      });
+      return shuffle(cards);
+    }
+
+    function renderCards() {
+      cardGrid.innerHTML = '';
+      const cards = setupCards();
+      cards.forEach((card, index) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.classList.add('card');
+        cardDiv.dataset.name = card.name;
+        cardDiv.dataset.type = card.type;
+        if (card.type === 'image') {
+          cardDiv.style.backgroundImage = `url(${card.content})`;
+        } else {
+          cardDiv.textContent = card.content;
+        }
+        cardGrid.appendChild(cardDiv);
+      });
+    }
+
+    function hideCards() {
+      document.querySelectorAll('.card').forEach(card => {
+        card.style.backgroundImage = '';
+        if (card.dataset.type === 'image') {
+          card.style.backgroundColor = '#fff';
+        }
+        card.textContent = '';
+      });
+    }
+
+    function flipCard(card) {
+      if (lockBoard || card === firstCard) return;
+
+      if (card.dataset.type === 'image') {
+        card.style.backgroundImage = `url(${data.find(d => d.name === card.dataset.name).img})`;
+      } else {
+        card.textContent = card.dataset.name;
+      }
+
+      if (!firstCard) {
+        firstCard = card;
+        return;
+      }
+
+      secondCard = card;
+      lockBoard = true;
+
+      if (firstCard.dataset.name === secondCard.dataset.name) {
+        score += 2;
+        matchedPairs++;
+        updateProgress();
+        resetBoard();
+
+        if (matchedPairs === 5) {
+          setTimeout(() => {
+            if (score >= targetScore) {
+              alert('恭喜過關！');
+              window.location.href = 'games_3.html';
+            } else {
+              alert('分數未達 6 分，請再試一次！');
+              window.location.reload();
+            }
+          }, 300);
+        }
+      } else {
+        setTimeout(() => {
+          firstCard.style.backgroundImage = '';
+          firstCard.textContent = '';
+          secondCard.style.backgroundImage = '';
+          secondCard.textContent = '';
+          resetBoard();
+        }, 1000);
+      }
+
+      scoreDisplay.textContent = score;
+    }
+
+    function resetBoard() {
+      [firstCard, secondCard] = [null, null];
+      lockBoard = false;
+    }
+
+    startBtn.addEventListener('click', () => {
+      intro.style.display = 'none';
+      gameContent.style.display = 'block';
+      bgm.volume = 0.2; // ✅ 加上這一行：設定音量
+      bgm.play().catch((err) => {
+        console.warn("音樂播放失敗：", err);
+      });
+      renderCards();
+
+      setTimeout(() => {
+        hideCards();
+        document.querySelectorAll('.card').forEach(card => {
+          card.addEventListener('click', () => flipCard(card));
+        });
+      }, 5000);
+    });
+  </script>
+</body>
+</html>

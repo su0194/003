@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第五關：澳洲咖啡任務</title>
+  <style>
+    @font-face {
+      font-family: 'WCL07';
+      src: url('fonts/wcl-07.ttf') format('truetype');
+    }
+    body {
+      margin: 0;
+      font-family: 'WCL07', sans-serif;
+      background: url('images/bg_australia.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .game-container {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      max-width: 900px;
+      margin: 30px auto;
+      border-radius: 10px;
+    }
+    .instructions p {
+      margin: 5px 0;
+    }
+    .score-board {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .flag {
+      width: 60px;
+      height: auto;
+    }
+    .coffee-options {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .coffee-btn {
+      padding: 10px 20px;
+      margin: 10px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 1.2em;
+    }
+    .coffee-btn:hover {
+      background-color: #45a049;
+    }
+    .ingredient-img {
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      border: 3px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .ingredient-img:hover {
+      transform: scale(1.1);
+      border-color: #fff;
+    }
+    .customer-box {
+      background: #fff;
+      color: #000;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    #start-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 12px 30px;
+      font-size: 1.5em;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    #start-btn:hover {
+      background-color: #45a049;
+    }
+    #game-content {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>SDGs 第17項 - 夥伴關係：澳洲咖啡任務</h1>
+    <div id="intro">
+      <p>☕ 遊戲玩法：根據每位顧客的需求，選出適合的咖啡豆（文字）和配料（圖片）。</p>
+      <p>🧠 共需服務 5 位顧客，每位完成得 1 分，全部正確即可過關！</p>
+      <p>🌏 SDGs 第17項強調全球合作，讓我們一同打造跨國合作的咖啡夥伴關係！</p>
+      <button id="start-btn">開始遊戲</button>
+    </div>
+
+    <div id="game-content">
+      <div class="score-board">
+        <span>顧客數：<span id="score">0</span>/5</span>
+        <img src="images/australia.png" class="flag" alt="澳洲國旗" />
+      </div>
+      <div class="customer-box" id="customer-request"></div>
+
+      <h3>選擇咖啡豆：</h3>
+      <div class="coffee-options" id="beans"></div>
+
+      <h3>選擇配料：</h3>
+      <div class="coffee-options" id="ingredients"></div>
+    </div>
+  </div>
+
+  <audio id="bgm" src="audio/bgm_australia.mp3" loop></audio>
+
+  <script>
+    const bgm = document.getElementById("bgm");
+
+    const customers = [
+      { request: "我不喜歡太苦的咖啡。", bean: "淺烘焙", ingredient: "milk.png" },
+      { request: "我來自德國，想喝點甜的。", bean: "中烘焙", ingredient: "caramel.png" },
+      { request: "天氣好熱，來點清涼的。", bean: "淺烘焙", ingredient: "ice.png" },
+      { request: "我喜歡傳統又濃郁的風味。", bean: "深烘焙", ingredient: "milk.png" },
+      { request: "請給我一杯甜甜又不太苦的咖啡。", bean: "中烘焙", ingredient: "caramel.png" }
+    ];
+
+    const beanOptions = ["淺烘焙", "中烘焙", "深烘焙"];
+    const ingredientOptions = ["milk.png", "caramel.png", "ice.png"];
+
+    let currentCustomer = 0;
+    let score = 0;
+
+    document.getElementById("start-btn").addEventListener("click", () => {
+      document.getElementById("intro").style.display = "none";
+      document.getElementById("game-content").style.display = "block";
+
+      bgm.volume = 0.2; // 音量設定為 20%
+      bgm.play().catch(err => console.warn("音樂播放錯誤：", err));
+
+      showCustomer();
+    });
+
+    function showCustomer() {
+      const cust = customers[currentCustomer];
+      document.getElementById("customer-request").textContent = `顧客：${cust.request}`;
+
+      const beanDiv = document.getElementById("beans");
+      beanDiv.innerHTML = "";
+      beanOptions.forEach(bean => {
+        const btn = document.createElement("button");
+        btn.textContent = bean;
+        btn.className = "coffee-btn";
+        btn.title = bean === "淺烘焙" ? "味道較酸且苦味低" :
+                     bean === "中烘焙" ? "苦甜適中" :
+                     "苦味較重，風味濃郁";
+        btn.onclick = () => selectBean(bean);
+        beanDiv.appendChild(btn);
+      });
+
+      const ingDiv = document.getElementById("ingredients");
+      ingDiv.innerHTML = "";
+      ingredientOptions.forEach(img => {
+        const image = document.createElement("img");
+        image.src = `images/${img}`;
+        image.className = "ingredient-img";
+        image.title = img === "milk.png" ? "增加柔和口感" :
+                       img === "caramel.png" ? "增加甜味" :
+                       "冰鎮飲用";
+        image.onclick = () => selectIngredient(img);
+        ingDiv.appendChild(image);
+      });
+    }
+
+    let selectedBean = null;
+    let selectedIngredient = null;
+
+    function selectBean(bean) {
+      selectedBean = bean;
+      checkAnswer();
+    }
+
+    function selectIngredient(ingredient) {
+      selectedIngredient = ingredient;
+      checkAnswer();
+    }
+
+    function checkAnswer() {
+      if (!selectedBean || !selectedIngredient) return;
+
+      const cust = customers[currentCustomer];
+      if (cust.bean === selectedBean && cust.ingredient === selectedIngredient) {
+        score++;
+        alert("✔️ 完美搭配！");
+      } else {
+        alert("❌ 配方不合顧客期待，請再試試！");
+        return;
+      }
+
+      selectedBean = null;
+      selectedIngredient = null;
+      currentCustomer++;
+      document.getElementById("score").textContent = score;
+
+      if (currentCustomer >= customers.length) {
+        alert("🎉 成功過關，遊戲結束！");
+        bgm.pause();
+        document.getElementById("game-content").style.display = "none";
+      } else {
+        showCustomer();
+      }
+    }
+  </script>
+</body>
+</html>

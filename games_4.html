@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第四關：巴西反應遊戲</title>
+  <style>
+    @font-face {
+      font-family: 'WCL07';
+      src: url('fonts/wcl-07.ttf') format('truetype');
+    }
+    body {
+      margin: 0;
+      font-family: 'WCL07', sans-serif;
+      background: url('images/bg_brazil.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* 頁面置頂偏中 */
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: rgba(0,0,0,0.7);
+      padding: 20px 30px 40px;
+      border-radius: 12px;
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .instructions {
+      background-color: rgba(255,255,255,0.15);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      line-height: 1.5;
+      max-width: 600px;
+    }
+    #start-btn {
+      background-color: #4caf50;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 30px;
+      font-size: 1.5em;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+      margin-bottom: 30px;
+    }
+    #start-btn:hover {
+      background-color: #45a049;
+    }
+    .score-board {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      font-size: 20px;
+      width: 100%;
+      max-width: 600px;
+      display: none; /* 預設隱藏 */
+      user-select: none;
+    }
+    .flag {
+      width: 60px;
+      height: auto;
+      display: none; /* 預設隱藏 */
+    }
+    #score {
+      font-weight: bold;
+      font-size: 1.3em;
+      min-width: 50px;
+      text-align: center;
+    }
+    #event-area {
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      height: 150px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-size: 1.4em;
+      user-select: none;
+      color: white;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 0;
+      display: none; /* 預設隱藏 */
+    }
+    .options {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      display: none; /* 預設隱藏 */
+      max-width: 600px;
+      width: 100%;
+    }
+    .option-btn {
+      background-color: #2196F3;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 30px;
+      color: white;
+      font-size: 1.2em;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+      min-width: 120px;
+    }
+    .option-btn:hover {
+      background-color: #1976d2;
+    }
+    #message {
+      font-size: 1.3em;
+      font-weight: bold;
+      min-height: 1.6em;
+      margin-bottom: 15px;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SDGs 第17項 - 夥伴關係：巴西反應遊戲</h1>
+    <div class="instructions" id="instructions">
+      <p>🎯 遊戲規則：</p>
+      <p>共會出現 10 次災害事件，每次持續 5 秒。</p>
+      <p>請在事件出現期間，點選正確的應對方案。</p>
+      <p>答對得 +1 分，答錯扣 -1 分（最低0分）。</p>
+      <p>當正確率達 70%（即至少7分）時，顯示成功訊息並自動跳轉至第5關；否則重新第4關。</p>
+    </div>
+
+    <button id="start-btn">開始遊戲</button>
+
+    <!-- 分數板 + 國旗放在文字方塊上方 -->
+    <div class="score-board" id="score-board">
+      <span>分數：<span id="score">0</span></span>
+      <img src="images/brazil.png" alt="巴西國旗" class="flag" id="flag" />
+    </div>
+
+    <div id="event-area">遊戲尚未開始</div>
+
+    <div class="options" id="options">
+      <button class="option-btn" data-answer="防洪">防洪</button>
+      <button class="option-btn" data-answer="滅火">滅火</button>
+      <button class="option-btn" data-answer="疏散">疏散</button>
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <audio id="bgm" src="audio/bgm_brazil.mp3" loop></audio>
+
+  <script>
+    const startBtn = document.getElementById('start-btn');
+    const scoreDisplay = document.getElementById('score');
+    const flag = document.getElementById('flag');
+    const eventArea = document.getElementById('event-area');
+    const options = document.getElementById('options');
+    const message = document.getElementById('message');
+    const instructions = document.getElementById('instructions');
+    const scoreBoard = document.getElementById('score-board');
+    const bgm = document.getElementById('bgm');
+
+    const disasters = [
+      { event: '洪水來襲', answer: '防洪' },
+      { event: '森林大火', answer: '滅火' },
+      { event: '火山爆發', answer: '疏散' },
+      { event: '颶風逼近', answer: '疏散' },
+      { event: '水資源污染', answer: '防洪' },
+      { event: '乾旱嚴重', answer: '防洪' },
+      { event: '火災警報', answer: '滅火' },
+      { event: '土石流警告', answer: '疏散' },
+      { event: '森林火災', answer: '滅火' },
+      { event: '強風來襲', answer: '疏散' }
+    ];
+
+    let score = 0;
+    let currentIndex = 0;
+    let timer = null;
+    let answered = false;
+
+    function updateScoreDisplay() {
+      scoreDisplay.textContent = score;
+    }
+
+    function showNextDisaster() {
+      if(currentIndex >= disasters.length) {
+        endGame();
+        return;
+      }
+      answered = false;
+      eventArea.textContent = disasters[currentIndex].event;
+      message.textContent = '';
+      currentIndex++;
+      timer = setTimeout(() => {
+        if(!answered) {
+          score = Math.max(0, score - 1);
+          updateScoreDisplay();
+          message.textContent = '時間到！答錯了！';
+        }
+        showNextDisaster();
+      }, 5000);
+    }
+
+    function endGame() {
+      options.style.display = 'none';
+      scoreBoard.style.display = 'none';
+      eventArea.textContent = '遊戲結束！';
+      const successRate = score / disasters.length;
+      if(successRate >= 0.7) {
+        message.textContent = '恭喜！與巴西成功建立夥伴關係！即將進入第5關！';
+        setTimeout(() => {
+          window.location.href = 'games_5.html';
+        }, 3500);
+      } else {
+        message.textContent = '未達標準，請再接再厲，遊戲將重新開始。';
+        setTimeout(() => {
+          location.reload();
+        }, 3500);
+      }
+    }
+
+    options.querySelectorAll('.option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(answered) return;
+        answered = true;
+        clearTimeout(timer);
+        if(btn.dataset.answer === disasters[currentIndex -1].answer) {
+          score++;
+          message.textContent = '答對！+1 分';
+        } else {
+          score = Math.max(0, score - 1);
+          message.textContent = '答錯！-1 分';
+        }
+        updateScoreDisplay();
+        setTimeout(showNextDisaster, 1000);
+      });
+    });
+
+    startBtn.addEventListener('click', () => {
+      startBtn.style.display = 'none';
+      instructions.style.display = 'none';
+      options.style.display = 'flex';
+      flag.style.display = 'inline-block';
+      scoreBoard.style.display = 'flex';
+      eventArea.style.display = 'flex';
+      score = 0;
+      currentIndex = 0;
+      updateScoreDisplay();
+      showNextDisaster();
+
+     const bgm = document.getElementById("bgm");
+      bgm.volume = 0.2; // 音量設定為 20%
+      bgm.play().catch(err => console.warn("音樂播放錯誤：", err));
+    });
+  </script>
+</body>
+</html>
